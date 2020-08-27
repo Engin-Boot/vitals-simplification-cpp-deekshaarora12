@@ -2,7 +2,7 @@
 
 const int bpmlimits[] = { 70,150 };
 const int spo2limit = 90;
-const int respRatelimits[] = { 30,90 };
+const int respRatelimits[] = { 30,95 };
 
 bool isBpmOk(float bpm) {
     return (bpm > bpmlimits[0] && bpm < bpmlimits[1]);

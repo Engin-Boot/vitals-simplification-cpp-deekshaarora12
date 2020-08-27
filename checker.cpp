@@ -8,7 +8,7 @@ bool isBpmOk(float bpm) {
     return (bpm > bpmlimits[0] && bpm < bpmlimits[1]);
 };
 bool isSpo2Ok(float spo2) {
-    return (spo2 < spo2limit);
+    return (spo2 > spo2limit);
 };
 
 bool isRespRateOk(float respRate) {

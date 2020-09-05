@@ -1,171 +1,124 @@
 #include<assert.h>
 #include<iostream>
 #include<map>
+#include <vector>
+#include<iterator>
+#include <string>
 using namespace std;
 
-const int bpmUpperLimit=150;
-const int bpmLowerLimit=70;
-const int spo2limit = 90;
-const int respRateLowerLimit = 30;
-const int respRateUpperLimit = 95;
+struct vitalsinfo {
+	string name;
+	float upperlimit;
+	float lowerlimit;
+	float singlelimit;
 
+	vitalsinfo(string vtname, float upper, float lower, float single) {
+		this->name = vtname;
+		this->upperlimit = upper;
+		this->lowerlimit = lower;
+		this->singlelimit = single;
+	}
 
-class alert{
+}; vector<vitalsinfo> vitaldetails;
+
+void addVitalDetails() {
+
+	struct vitalsinfo bpmobj("Bpm", 150, 70, 0);
+	struct vitalsinfo spo2obj("Spo2", 0, 0, 90);
+	struct vitalsinfo respobj("Resp", 95, 30, 0);
+
+	vitaldetails.push_back(bpmobj);
+	vitaldetails.push_back(spo2obj);
+	vitaldetails.push_back(respobj);
+
+	/*for (const auto& elem : vitaldetails)
+	{
+		std::cout << elem.name << " " << elem.upperlimit << " " << elem.lowerlimit << " "<< elem.singlelimit<< "\n";
+	}*/
+}
+
+int getVitalIndex(string name) {
+	int index = 0;
+	for(int i=0;i<vitaldetails.size();i++){
+		if (vitaldetails[i].name == name)
+			return i;
+	}
+	return index;
+}
+
+class Alert {
 public:
-	void getAlertMessage(const std::map<string, int> &printresults) {
+	virtual void getAlertMessage(const std::map<string, int>& printresults) = 0;
+};
+
+class AlertInSMS :public Alert {
+public:
+	void getAlertMessage(const std::map<string, int>& printresults) {
 		std::map<string, int>::const_iterator itr;
 		for (itr = printresults.begin(); itr != printresults.end(); itr++) {
 			if (itr->second == 1)
-				cout << itr->first << endl;		
+				cout << "Alert in SMS: " << itr->first << endl;
 		}
-		
 	}
-
 };
 
-class bpm{
-private:
-	alert* alertmessage;
+class AlertInSound :public Alert {
 public:
-	
-	bool isBpmHigh(int bpmvalue) {
-		return(bpmvalue > bpmUpperLimit);
-	}
-	bool isBpmLow(int bpmvalue) {
-		return(bpmvalue < bpmLowerLimit);
-	}
-	bool isBpmNormal(int bpmvalue) {
-		return(bpmvalue >= bpmLowerLimit && bpmvalue <= bpmUpperLimit);
-	}
-	void addToMap(int high,int low,int normal) {
-		alert alertobj;
-		std::map<string, int> bpmresults;  
-
-		bpmresults.insert(pair<string, int>("High BPM rate", high));
-		bpmresults.insert(pair<string, int>("Low BPM rate", low));
-		bpmresults.insert(pair<string, int>("Normal BPM rate", normal));
-
-		this->alertmessage = &alertobj;
-		alertmessage->getAlertMessage(bpmresults);
-	}
-
-	void isBpmOk(int bpmvalue) {
-		bool checkNormal = isBpmNormal(bpmvalue);
-		bool checkHigh = isBpmHigh(bpmvalue);	
-		bool checkLow = isBpmLow(bpmvalue);	
-		addToMap(checkHigh,checkLow,checkNormal);
+	void getAlertMessage(const std::map<string, int>& printresults) {
+		std::map<string, int>::const_iterator itr;
+		for (itr = printresults.begin(); itr != printresults.end(); itr++) {
+			if (itr->second == 1)
+				cout << "Alert in Sound: " << itr->first << endl;
+		}
 	}
 };
 
-
-class spo2{
+class Bpm {
 private:
-	alert* alertmessage;
+	bool isBpmHigh(string name,float bpmvalue) {
+		    int index = getVitalIndex(name);
+			return(bpmvalue > vitaldetails[index].upperlimit);
+	}
+
+	bool isBpmLow(string name, float bpmvalue) {
+		   int index = getVitalIndex(name);
+			return(bpmvalue < vitaldetails[index].lowerlimit);
+	}
+
+	bool isBpmNormal(string name, float bpmvalue) {
+		    int index = getVitalIndex(name);
+			return(bpmvalue >= vitaldetails[index].lowerlimit && bpmvalue <= vitaldetails[index].upperlimit);
+	}
 public:
-	bool isSpo2High(int spo2value) {
-		return(spo2value > spo2limit);
-	}
-	bool isSpo2Low(int spo2value) {
-		return(spo2value < spo2limit);
-	}
-	bool isSpo2Normal(int spo2value) {
-		return(spo2value == spo2limit);
-	}
-	
-	void addToMap(int high, int low,int normal) {
-		alert alertobj;
-		std::map<string, int> spo2results;
+	 void checkBpm(Alert *alert,string name, float bpmvalue) {
+		std::map<string, int> bpmresults; 
 
-		spo2results.insert(pair<string, int>("High Spo2 rate", high));
-		spo2results.insert(pair<string, int>("Low Spo2 rate", low));
-		spo2results.insert(pair<string, int>("Normal Spo2 rate", normal));
+		int bpmhighresult = isBpmHigh(name, bpmvalue);
+		int bpmlowresult = isBpmLow(name, bpmvalue);
+		int bpmnormalresult = isBpmNormal(name, bpmvalue);
 
-		this->alertmessage = &alertobj;
-		alertmessage->getAlertMessage(spo2results);
-	}
-	void isSpo2Ok(int spo2value) {
-		int checkHigh = isSpo2High(spo2value);
-		int checkLow = isSpo2Low(spo2value);
-		int checkNormal = isSpo2Normal(spo2value);
-		addToMap(checkHigh,checkLow,checkNormal);
-}
-};
+		bpmresults.insert(pair<string, int>("High BPM rate", bpmhighresult));
+		bpmresults.insert(pair<string, int>("Low BPM rate", bpmlowresult));
+		bpmresults.insert(pair<string, int>("Normal BPM rate", bpmnormalresult));
 
-class resp {
-private:
-	alert* alertmessage;
-public:
-	bool isRespHigh(int respvalue) {
-		return(respvalue > respRateUpperLimit);
-	}
-	bool isRespLow(int respvalue) {
-		return(respvalue < respRateLowerLimit);
-	}
-	bool isRespNormal(int respvalue) {
-		return(respvalue >= respRateLowerLimit && respvalue <= respRateUpperLimit);
-	}
-	void addToMap(int high, int low, int normal) {
-		alert alertobj;
-		std::map<string, int> respresults;
-
-		respresults.insert(pair<string, int>("High Resp rate", high));
-		respresults.insert(pair<string, int>("Low Resp rate", low));
-		respresults.insert(pair<string, int>("Normal Resp rate", normal));
-
-		this->alertmessage = &alertobj;
-		alertmessage->getAlertMessage(respresults);
-	}
-
-	void isRespOk(int respvalue) {
-		bool checkNormal = isRespNormal(respvalue);
-		bool checkHigh = isRespHigh(respvalue);
-		bool checkLow = isRespLow(respvalue);
-		addToMap(checkHigh, checkLow, checkNormal);
-	}
-
-};
-
-
-class vitals{
-private:
-	 bpm* bpmrate;
-	 spo2* spo2rate;
-	 resp* resprate;
-
-public:
-	void checkVitals(int bpmvalue,int spo2value,int respvalue) {
-		checkBpm(bpmvalue);
-		checkSpo2(spo2value);
-		checkResp(respvalue);
-	}
-	void checkBpm(int bpmvalue) {
-		bpm bpmobj;
-		this->bpmrate = &bpmobj;
-		bpmrate->isBpmOk(bpmvalue);
-	}
-	void checkSpo2(int spo2value){
-		spo2 spo2obj;
-		this->spo2rate = &spo2obj;
-		spo2rate->isSpo2Ok(spo2value);
-	}
-	void checkResp(int respvalue) {
-		resp respobj;
-		this->resprate = &respobj;
-		resprate->isRespOk(respvalue);
-
+		alert->getAlertMessage(bpmresults);
 	}
 };
+class Spo2{
 
+};
+class Resp{
 
+};
 
 int main() {
-	vitals vt;
-	vt.checkVitals(12, 20, 100);
-	vt.checkVitals(80, 95, 60);
-	vt.checkVitals(60, 90, 40);
+	AlertInSMS alertsms;
+	AlertInSound alertsound;
 
-	vt.checkVitals(100, 120, 12);
-	vt.checkVitals(89, 110, 23);
-	vt.checkVitals(14, 95, 120);
+	addVitalDetails();
 
+	Bpm bpmobj;
+	bpmobj.checkBpm(&alertsms,"Bpm", 20);
+
+	
 }

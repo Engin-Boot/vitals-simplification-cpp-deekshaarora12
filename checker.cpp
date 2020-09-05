@@ -30,11 +30,6 @@ void addVitalDetails() {
 	vitaldetails.push_back(bpmobj);
 	vitaldetails.push_back(spo2obj);
 	vitaldetails.push_back(respobj);
-
-	/*for (const auto& elem : vitaldetails)
-	{
-		std::cout << elem.name << " " << elem.upperlimit << " " << elem.lowerlimit << " "<< elem.singlelimit<< "\n";
-	}*/
 }
 
 int getVitalIndex(string name) {
